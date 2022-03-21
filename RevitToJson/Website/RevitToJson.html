@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Revit to Json three.js</title>
-		<meta charset="utf-8">
+		<title>Revit to Json</title>
 		<style>
 			body {
 				background-color: #ccc;
@@ -15,16 +14,29 @@
 	</head>
 	<body>	
 		<script type="module">
+			//-- You need to load this demo via a server because
+			//-- otherwise an XSS exception will be thrown
+			//-- eg. use "python3 -m http.server" or Live Server
+			//-- addon for Visual Studio Code, etc.
+			//--
 			import { OrbitControls } from 'https://unpkg.com/three@0.119.1/examples/jsm/controls/OrbitControls.js';
 			import * as THREE from 'https://unpkg.com/three@0.119.1/build/three.module.js';
-			import data from './revit.json' assert { type: "json" };			
 			
+			const response = await fetch( 'revit.json' );
+			const data = await response.json( );
+
+			//-- The bulk of this demo is based on the three js
+			//-- orbit controls sample found at 
+			//-- https://threejs.org/examples/misc_controls_orbit.html
+			//--
 			let camera, controls, scene, renderer;
 
 			init( );
 			animate( );
 			function init( ) 
 			{
+				//-- Scene and Context Setup
+				//--
 				scene = new THREE.Scene( );
 				scene.background = new THREE.Color( 0xcccccc );
 				scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
@@ -42,16 +54,20 @@
 				controls.maxPolarAngle = Math.PI / 2;
 				controls.update( );
 
-				const dirLight1 = new THREE.DirectionalLight( 0xffffff );
-				dirLight1.position.set( 1, 1, 1 );
-				scene.add( dirLight1 );
+				const light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 1, 1, 1 );
+				scene.add( light );
 
+				//-- Fuse all meshes into one buffer for
+				//-- performance purposes
+				//--
 				const mesh = new THREE.BufferGeometry( );
 				const _points = [];
 				const _planes = [];	
 
 				const _min = new THREE.Vector3( 1e5, 1e5, 1e5 );
 				const _max = new THREE.Vector3(-1e5,-1e5,-1e5 );
+
 				for( const guid in data )
 				{
 					const entity = data[guid];
